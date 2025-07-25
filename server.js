@@ -1,36 +1,25 @@
-const path = require('path');
 const express = require('express');
 const basicAuth = require('express-basic-auth');
-const { Configuration, OpenAI } = require('openai');  // Import correto da OpenAI
+const path = require('path');
+const { OpenAI } = require('openai');
+
+require('dotenv').config();
 
 const app = express();
 
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Configurar autenticação básica
 app.use(basicAuth({
   users: { 'spokeraaa': 'senha123' },
   challenge: true,
-  unauthorizedResponse: (req) => 'Acesso negado: credenciais inválidas'
+  unauthorizedResponse: () => 'Acesso negado: credenciais inválidas'
 }));
 
-// Servir arquivos estáticos da pasta 'public'
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Rota para servir o index.html
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Configurar a OpenAI com sua chave da API
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAI({
-  configuration
-});
 
-// Rota POST para gerar currículo
 app.post('/generate', async (req, res) => {
   const { name, email, experience, skills } = req.body;
 
@@ -59,6 +48,10 @@ app.post('/generate', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
