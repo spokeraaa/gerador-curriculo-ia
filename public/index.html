@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gerador de Currículo com IA</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <h1>Gerador de Currículo com IA</h1>
+  <form id="resumeForm">
+    <label>Nome: <input type="text" name="name" required></label><br><br>
+    <label>Email: <input type="email" name="email" required></label><br><br>
+    <label>Experiência Profissional:<br>
+      <textarea name="experience" rows="5" required></textarea>
+    </label><br><br>
+    <label>Habilidades:<br>
+      <textarea name="skills" rows="3" required></textarea>
+    </label><br><br>
+    <button type="submit">Gerar Currículo</button>
+  </form>
+
+  <h2>Resultado:</h2>
+  <pre id="result" style="background:#f4f4f4; padding:10px; white-space: pre-wrap;"></pre>
+  <button id="downloadPdf" style="display:none; margin-top: 10px;">Baixar Currículo em PDF</button>
+
+  <script>
+    const form = document.getElementById('resumeForm');
+    const resultEl = document.getElementById('result');
+    const downloadBtn = document.getElementById('downloadPdf');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const data = {
+        name: form.name.value,
+        email: form.email.value,
+        experience: form.experience.value,
+        skills: form.skills.value
+      };
+
+      const button = form.querySelector('button[type="submit"]');
+      button.disabled = true;
+      button.textContent = 'Gerando... aguarde.';
+
+      resultEl.textContent = '';
+      downloadBtn.style.display = 'none';
+
+      try {
+        const response = await fetch('/generate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao gerar currículo');
+        }
+
+        const result = await response.json();
+        resultEl.textContent = result.resume;
+
+        // Mostrar o botão para baixar PDF
+        downloadBtn.style.display = 'inline-block';
+
+      } catch (error) {
+        resultEl.textContent = 'Erro: ' + error.message;
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Gerar Currículo';
+      }
+    });
+
+    // Função para gerar o PDF e baixar
+    downloadBtn.addEventListener('click', () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const text = resultEl.textContent;
+
+      // Quebrar texto em linhas para caber no PDF
+      const splitText = doc.splitTextToSize(text, 180);
+      doc.text(splitText, 10, 10);
+      doc.save('curriculo-gerado.pdf');
+    });
+  </script>
+</body>
+</html>
