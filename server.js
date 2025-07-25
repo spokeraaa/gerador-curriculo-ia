@@ -1,13 +1,27 @@
+const path = require('path');
 const express = require('express');
 const basicAuth = require('express-basic-auth');
-const app = express();
 
+const app = express();  // Criar a instância do Express
+
+app.use(express.json()); // Para aceitar JSON no corpo das requisições
+
+// Servir arquivos estáticos da pasta 'public'
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Autenticação básica
 app.use(basicAuth({
-  users: { 'usuario': 'senha123' },
+  users: { 'spokeraaa': 'senha123' },
   challenge: true,
   unauthorizedResponse: (req) => 'Acesso negado: credenciais inválidas'
 }));
 
+// Rota para servir a página inicial
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Rota POST para gerar currículo com OpenAI
 app.post('/generate', async (req, res) => {
   const { name, email, experience, skills } = req.body;
 
@@ -40,4 +54,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
-
