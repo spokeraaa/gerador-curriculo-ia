@@ -1,11 +1,13 @@
-const express = require('express');
-const basicAuth = require('express-basic-auth');
-const path = require('path');
-const { OpenAI } = require('openai');
-
 require('dotenv').config();
-
+const express = require('express');
 const app = express();
+const path = require('path');
+const basicAuth = require('express-basic-auth');
+
+const OpenAI = require('openai');
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -13,12 +15,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(basicAuth({
   users: { 'spokeraaa': 'senha123' },
   challenge: true,
-  unauthorizedResponse: () => 'Acesso negado: credenciais inválidas'
+  unauthorizedResponse: (req) => 'Acesso negado: credenciais inválidas'
 }));
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 app.post('/generate', async (req, res) => {
   const { name, email, experience, skills } = req.body;
