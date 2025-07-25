@@ -1,27 +1,36 @@
 const path = require('path');
 const express = require('express');
 const basicAuth = require('express-basic-auth');
+const { Configuration, OpenAI } = require('openai');  // Import correto da OpenAI
 
-const app = express();  // Criar a instância do Express
+const app = express();
 
-app.use(express.json()); // Para aceitar JSON no corpo das requisições
+app.use(express.json());
 
-// Servir arquivos estáticos da pasta 'public'
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Autenticação básica
+// Configurar autenticação básica
 app.use(basicAuth({
   users: { 'spokeraaa': 'senha123' },
   challenge: true,
   unauthorizedResponse: (req) => 'Acesso negado: credenciais inválidas'
 }));
 
-// Rota para servir a página inicial
+// Servir arquivos estáticos da pasta 'public'
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Rota para servir o index.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Rota POST para gerar currículo com OpenAI
+// Configurar a OpenAI com sua chave da API
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAI({
+  configuration
+});
+
+// Rota POST para gerar currículo
 app.post('/generate', async (req, res) => {
   const { name, email, experience, skills } = req.body;
 
@@ -36,13 +45,13 @@ app.post('/generate', async (req, res) => {
   `;
 
   try {
-    const completion = await openai.createChatCompletion({
+    const completion = await openai.chat.completions.create({
       model: 'gpt-4',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 700,
     });
 
-    res.json({ resume: completion.data.choices[0].message.content });
+    res.json({ resume: completion.choices[0].message.content });
   } catch (err) {
     console.error('Erro ao gerar currículo:', err);
     res.status(500).send('Erro ao gerar currículo.');
